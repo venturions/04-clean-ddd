@@ -9,7 +9,6 @@ interface AnswerQuestionUseCaseRequest {
 }
 
 export class AnswerQuestionUseCase {
-  // eslint-disable-next-line no-useless-constructor
   constructor(private answerRepository: AnswerRepository) {}
 
   async execute({
