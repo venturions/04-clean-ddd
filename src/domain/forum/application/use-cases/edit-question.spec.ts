@@ -1,59 +1,34 @@
 import { UniqueEntityID } from 'core/entities/unique-entity-id'
-import { makeQuestion } from '../../../../../test/factories/make-question'
 import { InMemoryQuestionsRepository } from '../../../../../test/repositories/in-memory-questions-repository'
-import { EditQuestionUseCase } from './edit-question'
-import { NotAllowedError } from './errors/not-allowed-error'
+import { CreateQuestionUseCase } from './create-question'
 
 let inMemoryQuestionsRepository: InMemoryQuestionsRepository
-let sut: EditQuestionUseCase
+let sut: CreateQuestionUseCase
 
-describe('Edit Question', () => {
+describe('Create Question', () => {
   beforeEach(() => {
     inMemoryQuestionsRepository = new InMemoryQuestionsRepository()
-    sut = new EditQuestionUseCase(inMemoryQuestionsRepository)
+    sut = new CreateQuestionUseCase(inMemoryQuestionsRepository)
   })
 
-  it('should be able to edit a question', async () => {
-    const newQuestion = makeQuestion(
-      {
-        authorId: new UniqueEntityID('author-1'),
-      },
-      new UniqueEntityID('question-1'),
-    )
-
-    await inMemoryQuestionsRepository.create(newQuestion)
-
-    await sut.execute({
-      questionId: newQuestion.id.toValue(),
-      authorId: 'author-1',
-      title: 'Pergunta teste',
-      content: 'Conteúdo teste',
-    })
-
-    expect(inMemoryQuestionsRepository.items[0]).toMatchObject({
-      title: 'Pergunta teste',
-      content: 'Conteúdo teste',
-    })
-  })
-
-  it('should not be able to edit a question from another user', async () => {
-    const newQuestion = makeQuestion(
-      {
-        authorId: new UniqueEntityID('author-1'),
-      },
-      new UniqueEntityID('question-1'),
-    )
-
-    await inMemoryQuestionsRepository.create(newQuestion)
-
+  it('should be able to create a question', async () => {
     const result = await sut.execute({
-      questionId: newQuestion.id.toValue(),
-      authorId: 'author-2',
-      title: 'Pergunta teste',
-      content: 'Conteúdo teste',
+      authorId: '1',
+      title: 'Nova pergunta',
+      content: 'Conteúdo da pergunta',
+      attachmentsIds: ['1', '2'],
     })
 
-    expect(result.isLeft()).toBe(true)
-    expect(result.value).toBeInstanceOf(NotAllowedError)
+    expect(result.isRight()).toBe(true)
+    expect(inMemoryQuestionsRepository.items[0]).toEqual(result.value?.question)
+    expect(
+      inMemoryQuestionsRepository.items[0].attachments.currentItems,
+    ).toHaveLength(2)
+    expect(
+      inMemoryQuestionsRepository.items[0].attachments.currentItems,
+    ).toEqual([
+      expect.objectContaining({ attachmentId: new UniqueEntityID('1') }),
+      expect.objectContaining({ attachmentId: new UniqueEntityID('2') }),
+    ])
   })
 })
